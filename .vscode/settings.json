@@ -1,6 +1,9 @@
 {
     "cSpell.words": [
+        "clippy",
+        "libpq",
         "reqwest",
+        "Rustfmt",
         "sqlx"
     ]
 }
