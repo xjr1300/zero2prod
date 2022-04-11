@@ -16,5 +16,8 @@ ENV SQLX_OFFLINE true
 # バイナリを構築
 RUN cargo build --release
 
+# プロダクション環境であることを指定
+ENV APP_ENVIRONMENT production
+
 # `docker run`が実行されたとき、バイナリを実行
 ENTRYPOINT ["./target/release/zero2prod"]
