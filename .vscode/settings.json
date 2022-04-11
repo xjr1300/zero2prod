@@ -5,6 +5,7 @@
         "libpq",
         "reqwest",
         "Rustfmt",
-        "sqlx"
+        "sqlx",
+        "Timestamptz"
     ]
 }
