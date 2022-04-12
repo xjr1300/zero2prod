@@ -45,4 +45,4 @@ COPY configuration configuration
 # プロダクション環境であることを指定
 ENV APP_ENVIRONMENT production
 # `docker run`が実行されたとき、バイナリを実行
-ENTRYPOINT ["./target/release/zero2prod"]
+ENTRYPOINT ["./zero2prod"]
