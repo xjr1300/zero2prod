@@ -1,0 +1,25 @@
+name: zero2prod
+region: fra
+services:
+  - name: zero2prod
+    dockerfile_path: DockerFile
+    source_dir: .
+    github:
+      branch: main
+      # mainブランチがコミットされるたびに、新しいバージョンをデプロイ（Continuous Deployment）
+      deploy_on_push: true
+      repo: xjr1300/zero2prod
+    health_check:
+      # ヘルスチェックエンドポイント￥
+      http_path: /health_check
+    # アプリケーションがリクエストをリッスンするポート
+    # ポート番号は、configuration/production.yamlに記録されているポート番号と一致させること
+    http_port: 8000
+    # プロダクション環境のワークロードでは、少なくとも2台以上必要
+    # しかし、今のところは、お金をキープするために1台
+    instance_count: 1
+    # アプリを運用するインスタンスの種類を示すスラグ
+    instance_size_slug: basic-xxs   # basic-xss: 512MB RAM, 1 vCPU, $5/month
+    # 受信したすべてのリクエストをアプリにルーティング
+    routes:
+      - path: /
