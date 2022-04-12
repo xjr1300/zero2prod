@@ -1,4 +1,9 @@
 use secrecy::{ExposeSecret, Secret};
+use serde_aux::field_attributes::deserialize_number_from_string;
+use sqlx::{
+    postgres::{PgConnectOptions, PgSslMode},
+    ConnectOptions,
+};
 
 #[derive(serde::Deserialize)]
 pub struct Settings {
@@ -8,6 +13,7 @@ pub struct Settings {
 
 #[derive(serde::Deserialize)]
 pub struct ApplicationSettings {
+    #[serde(deserialize_with = "deserialize_number_from_string")]
     pub port: u16,
     pub host: String,
 }
@@ -16,51 +22,55 @@ pub struct ApplicationSettings {
 pub struct DatabaseSettings {
     pub username: String,
     pub password: Secret<String>,
+    #[serde(deserialize_with = "deserialize_number_from_string")]
     pub port: u16,
     pub host: String,
     pub database_name: String,
+    pub require_ssl: bool,
 }
 
 impl DatabaseSettings {
-    pub fn connection_string(&self) -> Secret<String> {
-        Secret::new(format!(
-            "postgres://{}:{}@{}:{}/{}",
-            self.username,
-            self.password.expose_secret(),
-            self.host,
-            self.port,
-            self.database_name,
-        ))
+    pub fn without_db(&self) -> PgConnectOptions {
+        let ssl_mode = if self.require_ssl {
+            PgSslMode::Require
+        } else {
+            // 暗号化接続を試みて、失敗したら非暗号化接続にフォールバック
+            PgSslMode::Prefer
+        };
+        PgConnectOptions::new()
+            .host(&self.host)
+            .username(&self.username)
+            .password(self.password.expose_secret())
+            .port(self.port)
+            .ssl_mode(ssl_mode)
     }
 
-    pub fn connection_string_without_db(&self) -> Secret<String> {
-        Secret::new(format!(
-            "postgres://{}:{}@{}:{}",
-            self.username,
-            self.password.expose_secret(),
-            self.host,
-            self.port,
-        ))
+    pub fn with_db(&self) -> PgConnectOptions {
+        let mut options = self.without_db().database(&self.database_name);
+        options.log_statements(tracing::log::LevelFilter::Trace);
+        options
     }
 }
 
 pub fn get_configuration() -> Result<Settings, config::ConfigError> {
+    // 基本設定読み込み
     let mut settings = config::Config::default();
     let base_path = std::env::current_dir().expect("Failed to determine the current directory.");
     let configuration_directory = base_path.join("configuration");
-
     settings.merge(config::File::from(configuration_directory.join("base")).required(true))?;
-
-    // デフォルトの設定ファイルを読み込む
+    // 動作環境(`local` or `production`)を読み込む
     let environment: Environment = std::env::var("APP_ENVIRONMENT")
         .unwrap_or_else(|_| "local".into())
         .try_into()
         .expect("Failed to parse APP_ENVIRONMENT.");
-
-    // 環境ごとに特別な値で上書き
+    // 動作環境(`local` or `production`)の設定で上書き
     settings.merge(
         config::File::from(configuration_directory.join(environment.as_str())).required(true),
     )?;
+    // 環境変数から設定を追加
+    // 接頭辞がAPPで`__`で分離する。
+    // 例えば、`APP_APPLICATION__PORT=5001`は、`Settings.application.port`を設定
+    settings.merge(config::Environment::with_prefix("app").separator("__"))?;
 
     settings.try_into()
 }
