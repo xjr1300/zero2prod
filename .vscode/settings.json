@@ -3,6 +3,7 @@
         "chrono",
         "clippy",
         "libpq",
+        "quickcheck",
         "reqwest",
         "Rustfmt",
         "sqlx",
