@@ -27,6 +27,7 @@ tracing-subscriber = { version = "0.3", features = ["registry", "env-filter"] }
 tracing-actix-web = "0.5"
 unicode-segmentation = "1.9"
 uuid = { version = "0.8", features = ["v4"] }
+validator = "0.14"
 
 [dependencies.sqlx]
 version = "0.5.7"

@@ -1,10 +1,15 @@
+use validator::validate_email;
+
 #[derive(Debug)]
 pub struct SubscriberEmail(String);
 
 impl SubscriberEmail {
     pub fn parse(s: &str) -> Result<Self, String> {
-        // TODO: add validation.
-        Ok(Self(s.to_owned()))
+        if validate_email(s) {
+            Ok(Self(s.to_owned()))
+        } else {
+            Err(format!("{} is not a valid subscriber email.", s))
+        }
     }
 }
 
@@ -17,10 +22,15 @@ impl AsRef<str> for SubscriberEmail {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use claim::assert_err;
+    use claim::{assert_err, assert_ok};
 
     #[test]
-    fn empty_string_is_rejected() {
+    fn email_is_accepted() {
+        assert_ok!(SubscriberEmail::parse("anonymous-domain@domain.com"));
+    }
+
+    #[test]
+    fn email_empty_is_rejected() {
         assert_err!(SubscriberEmail::parse(""));
     }
 
