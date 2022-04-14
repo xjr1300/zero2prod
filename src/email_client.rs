@@ -111,9 +111,7 @@ mod tests {
     #[tokio::test]
     async fn send_email_sends_the_expected_request() {
         let mock_server = MockServer::start().await;
-        let email_address: String = SafeEmail().fake::<String>();
-        let sender = SubscriberEmail::parse(&email_address).unwrap();
-        let email_client = EmailClient::new(&mock_server.uri(), sender, Secret::new(Faker.fake()));
+        let email_client = email_client(&mock_server.uri());
 
         Mock::given(header_exists("X-Postmark-Server-Token"))
             .and(header("Content-Type", "application/json"))
@@ -125,13 +123,8 @@ mod tests {
             .mount(&mock_server)
             .await;
 
-        let email_address: String = SafeEmail().fake::<String>();
-        let subscriber_email = SubscriberEmail::parse(&email_address).unwrap();
-        let subject: String = Sentence(1..2).fake();
-        let content: String = Paragraph(1..10).fake();
-
         let outcome = email_client
-            .send_email(subscriber_email, &subject, &content, &content)
+            .send_email(email_address(), &subject(), &content(), &content())
             .await;
 
         assert_ok!(outcome);
@@ -140,14 +133,7 @@ mod tests {
     #[tokio::test]
     async fn send_email_fails_if_the_server_returns_500() {
         let mock_server = MockServer::start().await;
-        let email_address: String = SafeEmail().fake();
-        let sender = SubscriberEmail::parse(&email_address).unwrap();
-        let email_client = EmailClient::new(&mock_server.uri(), sender, Secret::new(Faker.fake()));
-
-        let email_address: String = SafeEmail().fake();
-        let subscriber_email = SubscriberEmail::parse(&email_address).unwrap();
-        let subject: String = Sentence(1..2).fake();
-        let content: String = Paragraph(1..10).fake();
+        let email_client = email_client(&mock_server.uri());
 
         Mock::given(any())
             .respond_with(ResponseTemplate::new(500))
@@ -156,7 +142,7 @@ mod tests {
             .await;
 
         let outcome = email_client
-            .send_email(subscriber_email, &subject, &content, &content)
+            .send_email(email_address(), &subject(), &content(), &content())
             .await;
 
         assert_err!(outcome);
@@ -165,12 +151,7 @@ mod tests {
     #[tokio::test]
     async fn send_email_times_out_if_the_server_takes_too_long() {
         let mock_server = MockServer::start().await;
-        let sender = SubscriberEmail::parse(&SafeEmail().fake::<String>()).unwrap();
-        let email_client = EmailClient::new(&mock_server.uri(), sender, Secret::new(Faker.fake()));
-
-        let subscriber_email = SubscriberEmail::parse(&SafeEmail().fake::<String>()).unwrap();
-        let subject = Sentence(1..2).fake::<String>();
-        let content = Paragraph(1..10).fake::<String>();
+        let email_client = email_client(&mock_server.uri());
 
         let response = ResponseTemplate::new(200).set_delay(std::time::Duration::from_secs(180));
         Mock::given(any())
@@ -180,9 +161,29 @@ mod tests {
             .await;
 
         let outcome = email_client
-            .send_email(subscriber_email, &subject, &content, &content)
+            .send_email(email_address(), &subject(), &content(), &content())
             .await;
 
         assert_err!(outcome);
+    }
+
+    /// ランダムなEメールの件名を生成する。
+    fn subject() -> String {
+        Sentence(1..2).fake()
+    }
+
+    /// ランダムなEメールのコンテンツを生成する。
+    fn content() -> String {
+        Paragraph(1..10).fake()
+    }
+
+    /// ランダムな購読者のEメールアドレスを生成する。
+    fn email_address() -> SubscriberEmail {
+        SubscriberEmail::parse(&SafeEmail().fake::<String>()).unwrap()
+    }
+
+    /// EmailClientインスタンスを生成する。
+    fn email_client(base_url: &str) -> EmailClient {
+        EmailClient::new(base_url, email_address(), Secret::new(Faker.fake()))
     }
 }
