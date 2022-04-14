@@ -15,11 +15,9 @@ impl EmailClient {
         base_url: &str,
         sender: SubscriberEmail,
         authorization_token: Secret<String>,
+        timeout: std::time::Duration,
     ) -> Self {
-        let http_client = Client::builder()
-            .timeout(std::time::Duration::from_secs(10))
-            .build()
-            .unwrap();
+        let http_client = Client::builder().timeout(timeout).build().unwrap();
         Self {
             http_client,
             base_url: base_url.to_owned(),
@@ -184,6 +182,11 @@ mod tests {
 
     /// EmailClientインスタンスを生成する。
     fn email_client(base_url: &str) -> EmailClient {
-        EmailClient::new(base_url, email_address(), Secret::new(Faker.fake()))
+        EmailClient::new(
+            base_url,
+            email_address(),
+            Secret::new(Faker.fake()),
+            std::time::Duration::from_millis(200),
+        )
     }
 }
