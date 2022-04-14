@@ -56,7 +56,7 @@ pub async fn spawn_app() -> TestApp {
     TestApp { address, pool }
 }
 
-pub async fn configure_database(config: &DatabaseSettings) -> PgPool {
+async fn configure_database(config: &DatabaseSettings) -> PgPool {
     // データベース名を指定しないことで、template1データベースに接続
     let mut connection = PgConnection::connect_with(&config.without_db())
         .await
