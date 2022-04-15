@@ -2,6 +2,7 @@ use uuid::Uuid;
 
 use once_cell::sync::Lazy;
 use sqlx::{Connection, Executor, PgConnection, PgPool};
+use wiremock::MockServer;
 
 use zero2prod::configuration::{get_configuration, DatabaseSettings};
 use zero2prod::startup::{get_connection_pool, Application};
@@ -23,6 +24,7 @@ static TRACING: Lazy<()> = Lazy::new(|| {
 pub struct TestApp {
     pub address: String,
     pub pool: PgPool,
+    pub email_server: MockServer,
 }
 
 impl TestApp {
@@ -40,11 +42,15 @@ impl TestApp {
 pub async fn spawn_app() -> TestApp {
     Lazy::force(&TRACING);
 
+    // Postmark APIのために代役となるモックサーバーを起動
+    let email_server = MockServer::start().await;
+
     // テスト用データベースの名前と、アプリケーションがランダムなポートでリッスンするように設定
     let configuration = {
         let mut c = get_configuration().expect("Failed to read configuration.");
         c.database.database_name = Uuid::new_v4().to_string();
         c.application.port = 0;
+        c.email_client.base_url = email_server.uri();
         c
     };
 
@@ -61,6 +67,7 @@ pub async fn spawn_app() -> TestApp {
     TestApp {
         address,
         pool: get_connection_pool(&configuration.database),
+        email_server,
     }
 }
 
