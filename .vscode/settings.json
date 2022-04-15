@@ -3,6 +3,7 @@
         "chrono",
         "clippy",
         "libpq",
+        "linkify",
         "quickcheck",
         "reqwest",
         "Rustfmt",

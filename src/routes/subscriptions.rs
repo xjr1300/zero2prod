@@ -43,15 +43,7 @@ pub async fn subscribe(
     if insert_subscriber(&pool, &new_subscriber).await.is_err() {
         return HttpResponse::InternalServerError().finish();
     }
-    // （使い物にならない）Eメールを新しい購読者に送信
-    // 現段階では、Eメールの送信エラーを無視
-    if email_client
-        .send_email(
-            new_subscriber.email,
-            "Welcome!",
-            "Welcome to out newsletter!",
-            "Welcome to out newsletter!",
-        )
+    if send_confirmation_email(&email_client, new_subscriber)
         .await
         .is_err()
     {
@@ -59,6 +51,29 @@ pub async fn subscribe(
     }
 
     HttpResponse::Ok().finish()
+}
+
+#[tracing::instrument(
+    name = "Send a confirmation email to a new subscriber.",
+    skip(email_client, new_subscriber)
+)]
+pub async fn send_confirmation_email(
+    email_client: &EmailClient,
+    new_subscriber: NewSubscriber,
+) -> Result<(), reqwest::Error> {
+    let confirmation_link = "https://my-api.com/subscripitons/confirm";
+    let plain_body = format!(
+        "Welcome to out newsletter!\nVisit {} to confirm your subscription.",
+        confirmation_link,
+    );
+    let html_body = format!(
+        "Welcome to out newsletter!<br />\
+        Click <a href=\"{}\">here</a> to confirm your subscription.",
+        confirmation_link
+    );
+    email_client
+        .send_email(new_subscriber.email, "Welcome!", &html_body, &plain_body)
+        .await
 }
 
 #[tracing::instrument(
