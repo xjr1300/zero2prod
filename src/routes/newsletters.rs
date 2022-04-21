@@ -110,7 +110,7 @@ fn basic_authentication(headers: &HeaderMap) -> Result<Credentials, anyhow::Erro
         .to_str()
         .context("The 'Authorization' header was not a valid UTF8 string.")?;
     let base64encoded_segment = header_value
-        .strip_prefix("Basic: ")
+        .strip_prefix("Basic ")
         .context("The authorization scheme wa not 'Basic'.")?;
     let decoded_bytes = base64::decode_config(base64encoded_segment, base64::STANDARD)
         .context("Failed to base64-decode 'Basic' credentials.")?;
