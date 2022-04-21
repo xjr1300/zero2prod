@@ -7,6 +7,7 @@
         "quickcheck",
         "reqwest",
         "Rustfmt",
+        "splitn",
         "sqlx",
         "thiserror",
         "Timestamptz",
