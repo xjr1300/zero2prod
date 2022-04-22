@@ -2,11 +2,13 @@
     "cSpell.words": [
         "chrono",
         "clippy",
+        "hasher",
         "libpq",
         "linkify",
         "quickcheck",
         "reqwest",
         "Rustfmt",
+        "splitn",
         "sqlx",
         "thiserror",
         "Timestamptz",

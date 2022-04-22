@@ -13,6 +13,8 @@ name = "zero2prod"
 [dependencies]
 actix-web = "4"
 anyhow = "1.0"
+argon2 = { version = "0.3", features = ["std"] }
+base64 = "0.13"
 chrono = "0.4"
 claim = "0.5"
 config = "0.11"
