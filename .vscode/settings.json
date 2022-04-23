@@ -3,6 +3,8 @@
         "chrono",
         "clippy",
         "hasher",
+        "hmac",
+        "htmlescape",
         "libpq",
         "linkify",
         "quickcheck",
@@ -12,6 +14,7 @@
         "sqlx",
         "thiserror",
         "Timestamptz",
+        "urlencoding",
         "wiremock"
     ]
 }
