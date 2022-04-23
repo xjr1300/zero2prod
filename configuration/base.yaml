@@ -14,5 +14,5 @@ email_client:
   sender_email: "test@gmail.com"
   authorization_token: "my-secret-token"
   timeout_milliseconds: 10000
- # 6379はRedisのデフォルトポート
- redis_uri: "redis://127.0.0.1:6379"
+# 6379はRedisのデフォルトポート
+redis_uri: "redis://127.0.0.1:6379"
