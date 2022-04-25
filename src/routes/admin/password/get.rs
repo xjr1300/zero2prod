@@ -1,13 +1,10 @@
 use std::fmt::Write;
 
-use actix_web::{http::header::ContentType, web, HttpResponse};
+use actix_web::{http::header::ContentType, HttpResponse};
 use actix_web_flash_messages::IncomingFlashMessages;
-
-use crate::authentication::UserId;
 
 pub async fn change_password_form(
     flash_messages: IncomingFlashMessages,
-    _user_id: web::ReqData<UserId>,
 ) -> Result<HttpResponse, actix_web::Error> {
     let mut msg_html = String::new();
     for m in flash_messages.iter() {
