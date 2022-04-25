@@ -126,3 +126,48 @@ async fn password_length_is_shorter_than_128_chars() {
         "<p><i>The password should be longer than 12 characters but shorter than 128 characters.</i></p>"
     ));
 }
+
+/// ログイン -> パスワード変更 -> リダイレクト -> ログアウト -> 新しいパスワードを使用してログインに成功
+#[tokio::test]
+async fn changing_password_works() {
+    let app = spawn_app().await;
+    let new_password = Uuid::new_v4().to_string();
+
+    // ログイン
+    let login_body = serde_json::json!({
+        "username": &app.test_user.username,
+        "password": &app.test_user.password,
+    });
+    let response = app.post_login(&login_body).await;
+    assert_is_redirect_to(&response, "/admin/dashboard");
+
+    // パスワード変更
+    let response = app
+        .post_change_password(&serde_json::json!({
+            "current_password": &app.test_user.password,
+            "new_password": &new_password,
+            "new_password_check": &new_password,
+        }))
+        .await;
+    assert_is_redirect_to(&response, "/admin/password");
+
+    // リダイレクト
+    let html_page = app.get_change_password_html().await;
+    assert!(html_page.contains("<p><i>Your password has been change.</i></p>"));
+
+    // ログアウト
+    let response = app.post_logout().await;
+    assert_is_redirect_to(&response, "/login");
+
+    // リダイレクト
+    let html_page = app.get_login_html().await;
+    assert!(html_page.contains("<p><i>You have successfully logged out.</i></p>"));
+
+    // 新しいパスワードでログイン
+    let login_body = serde_json::json!({
+        "username": &app.test_user.username,
+        "password": &new_password,
+    });
+    let response = app.post_login(&login_body).await;
+    assert_is_redirect_to(&response, "/admin/dashboard");
+}
