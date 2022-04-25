@@ -1,20 +1,10 @@
-use actix_web::{
-    http::header::{ContentType, LOCATION},
-    web, HttpResponse,
-};
+use actix_web::{http::header::LOCATION, web, HttpResponse};
 use anyhow::Context;
 use sqlx::PgPool;
 use uuid::Uuid;
 
 use crate::session_state::TypedSession;
-
-// ロギングのために発生したエラーのルートを保持しながら、不明瞭なHTTPレスポンス500を返却する。
-fn e500<T>(e: T) -> actix_web::Error
-where
-    T: std::fmt::Debug + std::fmt::Display + 'static,
-{
-    actix_web::error::ErrorInternalServerError(e)
-}
+use crate::utils::e500;
 
 pub async fn admin_dashboard(
     session: TypedSession,
@@ -28,10 +18,8 @@ pub async fn admin_dashboard(
             .finish());
     };
 
-    Ok(HttpResponse::Ok()
-        .content_type(ContentType::html())
-        .body(format!(
-            r#"<!DOCTYPE html>
+    Ok(HttpResponse::Ok().body(format!(
+        r#"<!DOCTYPE html>
 <html lang="ja">
 <head>
     <meta http-equiv="content-type" content="text/html; charset=utf-8">
@@ -39,13 +27,17 @@ pub async fn admin_dashboard(
 </head>
 <body>
     <p>Welcome {username}!</p>
+    <p>Available actions:</p>
+    <ol>
+        <li><a href="/admin/password">パスワード変更</a></li>
+    </ol>
 </body>
 </html>"#
-        )))
+    )))
 }
 
 #[tracing::instrument(name = "Get username", skip(pool))]
-async fn get_username(user_id: Uuid, pool: &PgPool) -> Result<String, anyhow::Error> {
+pub async fn get_username(user_id: Uuid, pool: &PgPool) -> Result<String, anyhow::Error> {
     let row = sqlx::query!(
         r#"
         SELECT username
