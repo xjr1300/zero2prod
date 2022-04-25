@@ -1,4 +1,6 @@
-use actix_web::{web, HttpResponse};
+use uuid::Uuid;
+
+use actix_web::{error::InternalError, web, HttpResponse};
 use actix_web_flash_messages::FlashMessage;
 use secrecy::{ExposeSecret, Secret};
 use sqlx::PgPool;
@@ -17,16 +19,23 @@ pub struct FormData {
     new_password_check: Secret<String>,
 }
 
+async fn reject_anonymous_users(session: TypedSession) -> Result<Uuid, actix_web::Error> {
+    match session.get_user_id().map_err(e500)? {
+        Some(user_id) => Ok(user_id),
+        None => {
+            let response = see_other("/login");
+            let e = anyhow::anyhow!("The user has not logged in.");
+            Err(InternalError::from_response(e, response).into())
+        }
+    }
+}
+
 pub async fn change_password(
     form: web::Form<FormData>,
     session: TypedSession,
     pool: web::Data<PgPool>,
 ) -> Result<HttpResponse, actix_web::Error> {
-    let user_id = session.get_user_id().map_err(e500)?;
-    if user_id.is_none() {
-        return Ok(see_other("/login"));
-    }
-    let user_id = user_id.unwrap();
+    let user_id = reject_anonymous_users(session).await?;
 
     // `Secret<String>`は`Eq`を実装していない。
     // よって、内在する`String`を比較する必要がある。
