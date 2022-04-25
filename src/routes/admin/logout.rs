@@ -1,14 +1,10 @@
-use actix_web::{web, HttpResponse};
+use actix_web::HttpResponse;
 use actix_web_flash_messages::FlashMessage;
 
-use crate::authentication::UserId;
 use crate::session_state::TypedSession;
 use crate::utils::see_other;
 
-pub async fn logout(
-    session: TypedSession,
-    _user_id: web::ReqData<UserId>,
-) -> Result<HttpResponse, actix_web::Error> {
+pub async fn logout(session: TypedSession) -> Result<HttpResponse, actix_web::Error> {
     session.logout();
     FlashMessage::info("You have successfully logged out.").send();
 
