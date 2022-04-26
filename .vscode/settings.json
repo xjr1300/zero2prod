@@ -5,6 +5,7 @@
         "hasher",
         "hmac",
         "htmlescape",
+        "idempotency",
         "libpq",
         "linkify",
         "quickcheck",
