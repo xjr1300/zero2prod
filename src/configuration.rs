@@ -69,7 +69,7 @@ pub struct EmailClientSettings {
 
 impl EmailClientSettings {
     pub fn client(self) -> EmailClient {
-        let sender_email = self.sender().expect("Invalid sender email addresss.");
+        let sender_email = self.sender().expect("Invalid sender email address.");
         let timeout = self.timeout();
 
         EmailClient::new(
