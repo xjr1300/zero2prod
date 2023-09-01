@@ -1,12 +1,15 @@
 use std::net::TcpListener;
 
+use sqlx::{Connection, PgConnection};
+
+use zero2prod::configuration::get_configuration;
+
 #[tokio::test]
 async fn health_check_works() {
     // 準備する。
     let address = spawn_app();
     // アプリケーションに対してHTTPリクエストを実行するための`requwest`を持ち出す必要がある。
     let client = reqwest::Client::new();
-
     // 実行
     let response = client
         .get(&format!("{}/health_check", &address))
@@ -21,7 +24,13 @@ async fn health_check_works() {
 #[tokio::test]
 async fn subscribe_returns_a_200_for_valid_form_data() {
     let address = spawn_app();
+    let configuration = get_configuration().expect("Failed to read configuration");
+    let connection_string = configuration.database.connection_string();
+    let connection = PgConnection::connect(&connection_string)
+        .await
+        .expect("Failed to connect to postgres");
     let client = reqwest::Client::new();
+
     let body = "name=Le%20Guin&email=ursula_le_guin%40gmail.com";
     let response = client
         .post(&format!("{}/subscriptions", &address))
