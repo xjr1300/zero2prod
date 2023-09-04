@@ -2,7 +2,10 @@
 # docker build --tag zero2prod --file Dockerfile .
 #
 # [Run]
-# docker run zero2prod
+# ポートの1番目の番号はローカルのポートを指定
+# ポートの2番目の番号はコンテナのポートを指定
+# この設定により、ローカルの8000番ポートにアクセスして、コンテナの8000番ポートにアクセス
+# docker run -p 8000:8000 zero2prod
 
 # 私たちは基本イメージにRustの最新の安定化バージョンを使用する。
 FROM rust:1.72.0
