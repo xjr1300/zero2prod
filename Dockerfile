@@ -13,6 +13,7 @@ COPY . .
 
 # バイナリをビルドする。
 # アプリケーションの動作速度を向上させるために、リリースプロファイルを使用する。
+ENV SQLX_OFFLINE true
 RUN cargo build --release
 
 # `docker run`が実行されたとき、バイナリが起動する。
