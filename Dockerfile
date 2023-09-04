@@ -1,3 +1,9 @@
+# [Build]
+# docker build --tag zero2prod --file Dockerfile .
+#
+# [Run]
+# docker run zero2prod
+
 # 私たちは基本イメージにRustの最新の安定化バージョンを使用する。
 FROM rust:1.72.0
 
