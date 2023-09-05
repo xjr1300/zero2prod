@@ -4,6 +4,8 @@ use sqlx::PgPool;
 use unicode_segmentation::UnicodeSegmentation;
 use uuid::Uuid;
 
+use crate::domain::NewSubscriber;
+
 #[derive(serde::Deserialize)]
 pub struct FormData {
     email: String,
@@ -42,7 +44,10 @@ pub fn is_valid_name(s: &str) -> bool {
     name = "Saving new subscriber details in the database",
     skip(pool, form)
 )]
-pub async fn insert_subscriber(pool: &PgPool, form: &FormData) -> Result<(), sqlx::Error> {
+pub async fn insert_subscriber(
+    pool: &PgPool,
+    new_subscriber: &NewSubscriber,
+) -> Result<(), sqlx::Error> {
     sqlx::query!(
         r#"
         INSERT INTO subscriptions (
