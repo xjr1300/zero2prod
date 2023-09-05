@@ -20,4 +20,8 @@ impl SubscriberName {
             Self(s)
         }
     }
+
+    pub fn inner_ref(&self) -> &str {
+        &self.0
+    }
 }
