@@ -7,37 +7,41 @@
 # この設定により、ローカルの8000番ポートにアクセスして、コンテナの8000番ポートにアクセス
 # docker run -p 8000:8000 zero2prod
 
-# ビルダー段階（一時的な中間イメージ）
-# 私たちは基本イメージにRustの最新の安定化バージョンを使用する。
-FROM rust:1.72.0 AS builder
-# 作業ディレクトリを`app`に切り替える（`cd app`と同等）。
-# `app`ディレクトリは、それが存在しない場合に、Dockerによって作成される。
+# 調理段階
+FROM lukemathwalker/cargo-chef:latest-rust-1.72.0 as chef
 WORKDIR /app
-# 設定に関係する必要とされるシステム依存をインストールする。
-RUN apt update && apt install lld clang -y
-# 作業環境からDockerイメージへ全てのファイルをコピーする。
-COPY . .
-# バイナリをビルドする。
-# アプリケーションの動作速度を向上させるために、リリースプロファイルを使用する。
-ENV SQLX_OFFLINE true
-RUN cargo build --release
+RUN apt update && apt install -y lld clang
 
-# 実行段階（最終的なイメージ）
-FROM debian:bookworm-slim as runtime
-# 作業ディレクトリを`app`に切り替える（`cd app`と同等）。
+# 計画段階
+# 計画段階のコンテナはビルド段階のコンテナを無効にしないため、recipe.jsonが変更されない限り、
+# ビルド段階のコンテナはキャッシュされる。
+FROM chef as planner
+COPY . .
+# プロジェクトのロックファイルを処理
+RUN cargo chef prepare --recipe-path recipe.json
+
+# ビルド段階
+FROM chef as builder
+COPY --from=planner /app/recipe.json recipe.json
+# アプリケーションではなく、プロジェクトの依存関係をビルド
+RUN cargo chef cook --release --recipe-path recipe.json
+# ここまできたら、もし依存関係のツリーが同じに止まっていれば、すべてのレイヤはキャッシュされる。
+COPY . .
+ENV SQLX_OFFLINE true
+# プロジェクトをビルド
+RUN cargo build --release --bin zero2prod
+
+# 実行段階
+FROM debian:bookworm-slim AS runtime
 WORKDIR /app
-# OpenSSLをインストール: 私たちの依存関係のいくつかによって直接リンクされている。
-# ca-certificatesをインストール: HTTP接続を確立するとき、TLS証明書を検証するために必要とされる。
-RUN apt -y update \
-    && apt -y install --no-install-recommends openssl ca-certificates \
+RUN apt update -y \
+    && apt install -y --no-install-recommends openssl ca-certificates \
     # クリーンアップ
-    && apt -y autoremove \
-    && apt -y clean \
-    && rm -rf /var/lib/apt/lists/*
-# ビルダー環境から実行環境にコンパイルしたバイナリをコピー
+    && apt autoremove -y \
+    && apt clean -y \
+    &&  rm -rf /var/lib/apt/lists/*
+
 COPY --from=builder /app/target/release/zero2prod zero2prod
-# 実行段階では設定ファイルが必要
 COPY configuration configuration
-# `docker run`が実行されたとき、バイナリが起動する。
 ENV APP_ENVIRONMENT production
 ENTRYPOINT ["./zero2prod"]
