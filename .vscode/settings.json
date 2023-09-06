@@ -1,3 +1,4 @@
 {
-  "cSpell.words": ["chrono", "requwest", "reqwest"]
+  "cSpell.words": ["chrono", "requwest", "reqwest"],
+  "rust-analyzer.showUnlinkedFileNotification": false
 }
