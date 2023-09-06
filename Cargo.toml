@@ -42,4 +42,5 @@ features = [
 ]
 
 [dev-dependencies]
+fake = "2.8"
 reqwest = "0.11"
