@@ -1,6 +1,8 @@
 use crate::domain::SubscriberEmail;
 
 pub struct EmailClient {
+    http_client: Client,
+    base_url: String,
     sender: SubscriberEmail,
 }
 
