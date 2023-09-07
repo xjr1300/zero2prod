@@ -1,4 +1,4 @@
-use reqwest::{Client, Url};
+use reqwest::Client;
 use secrecy::{ExposeSecret, Secret};
 
 use crate::domain::SubscriberEmail;
@@ -30,12 +30,12 @@ impl EmailClient {
         subject: &str,
         html_content: &str,
         text_content: &str,
-    ) -> Result<(), String> {
-        let url = Url::parse(&self.base_url)
-            .map_err(|_| format!("{} is not a valid URL", &self.base_url))?;
-        let url = url
-            .join("email")
-            .map_err(|_| "failed to construct an email endpoint".to_string())?;
+    ) -> Result<(), reqwest::Error> {
+        // 7.2.4.1で、reqwest::Urlを使用してURLを構築すると、エラーが発生した場合、
+        // urlクレートのParseErrorをエラーとして返すため、send_emailメソッドの戻り値
+        // であるResultのエラー型が一致せずにコンパイルエラーが発生する。
+        // この場合、anyhowクレートを導入するなど、複数のエラー型に対応する必要がある。
+        let url = format!("{}/email", self.base_url);
         let request_body = SendEmailRequest {
             from: self.sender.as_ref().to_owned(),
             to: recipient.as_ref().to_owned(),
@@ -43,14 +43,15 @@ impl EmailClient {
             html_body: html_content.to_owned(),
             text_body: text_content.to_owned(),
         };
-        let builder = self
-            .http_client
+        self.http_client
             .post(url.as_str())
             .header(
                 "X-Postmark-Server-Token",
                 self.authorization_token.expose_secret(),
             )
-            .json(&request_body);
+            .json(&request_body)
+            .send()
+            .await?;
 
         Ok(())
     }
