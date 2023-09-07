@@ -1,4 +1,4 @@
-use reqwest::Client;
+use reqwest::{Client, Url};
 
 use crate::domain::SubscriberEmail;
 
@@ -23,6 +23,13 @@ impl EmailClient {
         html_content: &str,
         text_content: &str,
     ) -> Result<(), String> {
+        let url = Url::parse(&self.base_url)
+            .map_err(|_| format!("{} is not a valid URL", &self.base_url))?;
+        let url = url
+            .join("email")
+            .map_err(|_| "failed to construct an email endpoint".to_string())?;
+        let builder = self.http_client.post(url.as_str());
+
         Ok(())
     }
 }
