@@ -2,3 +2,8 @@ application:
   host: 0.0.0.0
 database:
   require_ssl: true
+email_client:
+  # PostmarkのAPIドキュメントから取得シア値
+  base_url: https://api.postmarkapp.com
+  # Postmarkで認証された送信元メールアドレス
+  sender_email: xjr1300.04@gmail.com
