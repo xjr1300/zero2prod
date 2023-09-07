@@ -72,7 +72,7 @@ mod tests {
     use fake::faker::lorem::en::{Paragraph, Sentence};
     use fake::{Fake, Faker};
     use secrecy::Secret;
-    use wiremock::matchers::any;
+    use wiremock::matchers::{header, header_exists, method, path};
     use wiremock::{Mock, MockServer, ResponseTemplate};
 
     use crate::domain::SubscriberEmail;
@@ -98,7 +98,10 @@ mod tests {
         //      それについて任意のアサーションをすることなしに、サーバーに向かってリクエストが送信されたかを確認するためにそれを使用できる。
         // expectは、モックサーバーに対して、このテストの期間に、それがこのモックに設定された条件にマッチするリクエストを正確に1つ受け取るべきであることを伝えている。
         // もし、少なくとも1つのリクエスト、expect(1..=3)は、少なくとも1つだが、３以下のリクエストを期待する。
-        Mock::given(any())
+        Mock::given(header_exists("X-Postmark-Server-Token"))
+            .and(header("Content-Type", "application/json"))
+            .and(path("/email"))
+            .and(method("POST"))
             .respond_with(ResponseTemplate::new(200))
             .expect(1)
             .mount(&mock_server)
