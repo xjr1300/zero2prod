@@ -101,7 +101,7 @@ pub async fn insert_subscriber(
         INSERT INTO subscriptions (
             id, email, name, status, subscribed_at
         ) VALUES (
-            $1, $2, $3, 'confirmed', $4
+            $1, $2, $3, 'pending_confirmation', $4
         )
         "#,
         Uuid::new_v4(),
