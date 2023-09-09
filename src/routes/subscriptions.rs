@@ -44,12 +44,20 @@ pub async fn subscribe(
     if insert_subscriber(&pool, &new_subscriber).await.is_err() {
         return HttpResponse::InternalServerError().finish();
     }
+    let confirmation_link = "https://there-is-no-such-domain.com/subscriptions/confirm";
     if email_client
         .send_email(
             new_subscriber.email,
             "Welcome!",
-            "Welcome to out newsletter!",
-            "Welcome to out newsletter!",
+            &format!(
+                "Welcome to our newsletter!<br />\
+                Click <a href=\"{}\">here</a> to confirm your subscription.",
+                confirmation_link
+            ),
+            &format!(
+                "Welcome to our newsletter!\nVisit {} to confirm your subscription.",
+                confirmation_link
+            ),
         )
         .await
         .is_err()
