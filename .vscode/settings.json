@@ -1,4 +1,4 @@
 {
-  "cSpell.words": ["chrono", "requwest", "reqwest", "wiremock"],
+  "cSpell.words": ["chrono", "linkify", "requwest", "reqwest", "wiremock"],
   "rust-analyzer.showUnlinkedFileNotification": false
 }
