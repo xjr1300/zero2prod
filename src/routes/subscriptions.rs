@@ -1,4 +1,4 @@
-use actix_web::{web, HttpResponse};
+use actix_web::{web, HttpResponse, ResponseError};
 use chrono::Utc;
 use rand::distributions::Alphanumeric;
 use rand::{thread_rng, Rng};
@@ -40,42 +40,36 @@ pub async fn subscribe(
     pool: web::Data<PgPool>,
     email_client: web::Data<EmailClient>,
     base_url: web::Data<ApplicationBaseUrl>,
-) -> HttpResponse {
+) -> Result<HttpResponse, actix_web::Error> {
     let new_subscriber = match form.0.try_into() {
         Ok(subscriber) => subscriber,
-        Err(_) => return HttpResponse::BadRequest().finish(),
+        Err(e) => return Err(actix_web::error::ErrorBadRequest(e)),
     };
     let mut transaction = match pool.begin().await {
         Ok(transaction) => transaction,
-        Err(_) => return HttpResponse::InternalServerError().finish(),
+        Err(e) => return Err(actix_web::error::ErrorInternalServerError(e)),
     };
     let subscriber_id = match insert_subscriber(&mut transaction, &new_subscriber).await {
         Ok(subscriber_id) => subscriber_id,
-        Err(_) => return HttpResponse::InternalServerError().finish(),
+        Err(e) => return Err(actix_web::error::ErrorInternalServerError(e)),
     };
     let subscription_token = generate_subscription_token();
-    if store_token(&mut transaction, subscriber_id, &subscription_token)
-        .await
-        .is_err()
-    {
-        return HttpResponse::InternalServerError().finish();
-    }
-    if send_confirmation_email(
+    store_token(&mut transaction, subscriber_id, &subscription_token).await?;
+    if let Err(e) = send_confirmation_email(
         &email_client,
         new_subscriber,
         &base_url.0,
         &subscription_token,
     )
     .await
-    .is_err()
     {
-        return HttpResponse::InternalServerError().finish();
+        return Err(actix_web::error::ErrorInternalServerError(e));
     }
     match transaction.commit().await {
-        Ok(_) => HttpResponse::Ok().finish(),
+        Ok(_) => Ok(HttpResponse::Ok().finish()),
         Err(e) => {
             tracing::error!("Failed to commit: {:?}", e);
-            HttpResponse::InternalServerError().finish()
+            Err(actix_web::error::ErrorInternalServerError(e))
         }
     }
 }
@@ -88,7 +82,7 @@ pub async fn store_token(
     transaction: &mut Transaction<'_, Postgres>,
     subscriber_id: Uuid,
     subscription_token: &str,
-) -> Result<(), sqlx::Error> {
+) -> Result<(), StoreTokenError> {
     sqlx::query!(
         r#"
         INSERT INTO subscription_tokens (
@@ -104,7 +98,7 @@ pub async fn store_token(
     .await
     .map_err(|e| {
         tracing::error!("Failed to execute query: {:?}", e);
-        e
+        StoreTokenError(e)
     })?;
 
     Ok(())
@@ -188,4 +182,19 @@ fn generate_subscription_token() -> String {
         .map(char::from)
         .take(25)
         .collect()
+}
+
+#[derive(Debug)]
+pub struct StoreTokenError(sqlx::Error);
+
+impl ResponseError for StoreTokenError {}
+
+impl std::fmt::Display for StoreTokenError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "A database error was encountered while trying to \
+            store a subscription token"
+        )
+    }
 }
