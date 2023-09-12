@@ -1,5 +1,6 @@
 use actix_web::http::StatusCode;
 use actix_web::{web, HttpResponse, ResponseError};
+use anyhow::Context;
 use sqlx::PgPool;
 
 use crate::email_client::EmailClient;
@@ -40,7 +41,8 @@ pub async fn publish_newsletter(
                 &body.content.html,
                 &body.content.text,
             )
-            .await?;
+            .await
+            .with_context(|| format!("Failed to send newsletter issue to {}", subscriber.email))?;
     }
 
     Ok(HttpResponse::Ok().finish())
