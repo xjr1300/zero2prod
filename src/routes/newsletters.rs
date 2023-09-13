@@ -3,6 +3,7 @@ use actix_web::{web, HttpResponse, ResponseError};
 use anyhow::Context;
 use sqlx::PgPool;
 
+use crate::domain::SubscriberEmail;
 use crate::email_client::EmailClient;
 use crate::routes::error_chain_fmt;
 
@@ -61,15 +62,19 @@ pub struct Content {
 }
 
 struct ConfirmedSubscriber {
-    email: String,
+    email: SubscriberEmail,
 }
 
 #[tracing::instrument(name = "Get confirmed subscribers", skip(pool))]
 async fn get_confirmed_subscribers(
     pool: &PgPool,
 ) -> Result<Vec<ConfirmedSubscriber>, anyhow::Error> {
+    struct Row {
+        email: String,
+    }
+
     let rows = sqlx::query_as!(
-        ConfirmedSubscriber,
+        Row,
         r#"
         SELECT email
         FROM subscriptions
@@ -78,6 +83,19 @@ async fn get_confirmed_subscribers(
     )
     .fetch_all(pool)
     .await?;
+    let confirmed_subscribers = rows
+        .into_iter()
+        .filter_map(|r| match SubscriberEmail::parse(r.email) {
+            Ok(email) => Some(ConfirmedSubscriber { email }),
+            Err(e) => {
+                tracing::warn!(
+                    "A confirmed subscriber is using an invalid email address: {}",
+                    e
+                );
+                None
+            }
+        })
+        .collect();
 
-    Ok(rows)
+    Ok(confirmed_subscribers)
 }
