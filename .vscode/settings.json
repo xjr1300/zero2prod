@@ -6,6 +6,7 @@
     "requwest",
     "reqwest",
     "splitn",
+    "urlencoding",
     "wiremock"
   ],
   "rust-analyzer.showUnlinkedFileNotification": false

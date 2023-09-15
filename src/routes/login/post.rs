@@ -52,10 +52,12 @@ impl std::fmt::Debug for LoginError {
 
 impl ResponseError for LoginError {
     fn error_response(&self) -> HttpResponse {
+        let encoded_error = urlencoding::Encoded::new(self.to_string());
         HttpResponse::build(self.status_code())
-            .insert_header((LOCATION, "/login"))
+            .insert_header((LOCATION, format!("/login?error={}", encoded_error)))
             .finish()
     }
+
     fn status_code(&self) -> StatusCode {
         StatusCode::SEE_OTHER
     }
