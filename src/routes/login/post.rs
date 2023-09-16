@@ -15,7 +15,7 @@ pub struct FormData {
     password: Secret<String>,
 }
 
-#[tracing::instrument(name = "Login user", skip(form, secret,pool), fields(username=tracing::field::Empty, user_id=tracing::field::Empty))]
+#[tracing::instrument(skip(pool, secret, form), fields(username=tracing::field::Empty, user_id=tracing::field::Empty))]
 pub async fn login(
     pool: web::Data<PgPool>,
     secret: web::Data<HmacSecret>,

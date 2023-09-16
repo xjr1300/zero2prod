@@ -78,7 +78,7 @@ pub fn run(
     let db_pool = web::Data::new(db_pool);
     let email_client = web::Data::new(email_client);
     let base_url = web::Data::new(ApplicationBaseUrl(base_url));
-    let hmac_secret = web::Data::new(hmac_secret);
+    let hmac_secret = web::Data::new(HmacSecret(hmac_secret.clone()));
     Ok(HttpServer::new(move || {
         App::new()
             .wrap(TracingLogger::default())
