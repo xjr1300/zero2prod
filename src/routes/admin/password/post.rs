@@ -33,8 +33,12 @@ pub async fn change_password(
         return Ok(see_other("/admin/password"));
     }
 
-    let username = get_username(user_id, &pool).await.map_err(e500)?;
+    if !(12..=128).contains(&form.new_password.expose_secret().len()) {
+        FlashMessage::error("パスワードは12文字以上128文字以下である必要があります。").send();
+        return Ok(see_other("/admin/password"));
+    }
 
+    let username = get_username(user_id, &pool).await.map_err(e500)?;
     let credentials = Credentials {
         username,
         password: form.0.current_password,
@@ -45,7 +49,7 @@ pub async fn change_password(
                 FlashMessage::error("現在のパスワードが間違っています。").send();
                 Ok(see_other("/admin/password"))
             }
-            AuthError::UnexpectedError(_) => Err(e500(e).into()),
+            AuthError::UnexpectedError(_) => Err(e500(e)),
         };
     }
 
