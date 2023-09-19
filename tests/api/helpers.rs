@@ -128,11 +128,15 @@ impl TestApp {
         Body: serde::Serialize,
     {
         self.api_client
-            .post(&format!("{}/admin/change_password", &self.address))
+            .post(&format!("{}/admin/password", &self.address))
             .form(body)
             .send()
             .await
             .expect("Failed to execute request")
+    }
+
+    pub async fn get_change_password_html(&self) -> String {
+        self.get_change_password().await.text().await.unwrap()
     }
 }
 
