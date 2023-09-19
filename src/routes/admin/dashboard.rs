@@ -5,13 +5,7 @@ use sqlx::PgPool;
 use uuid::Uuid;
 
 use crate::session_state::TypedSession;
-
-fn e500<T>(e: T) -> actix_web::Error
-where
-    T: std::fmt::Debug + std::fmt::Display + 'static,
-{
-    actix_web::error::ErrorInternalServerError(e)
-}
+use crate::utils::e500;
 
 pub async fn admin_dashboard(
     session: TypedSession,
@@ -36,6 +30,10 @@ pub async fn admin_dashboard(
 </head>
 <body>
     <p>ようこそ {username}!</p>
+    <p>利用可能なアクション:</p>
+    <ol>
+        <li><a href="/admin/password">パスワード変更</a></li>
+    </ol>
 </body>
 </html>"#
         )))
