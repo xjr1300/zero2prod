@@ -104,7 +104,7 @@ fn basic_authentication(headers: &HeaderMap) -> Result<Credentials, anyhow::Erro
     let decoded_credentials = String::from_utf8(decoded_bytes)
         .context("The decoded credential string is not valid UTF8")?;
 
-    // Basic認証において、Authorizationあヘッダーの値は、`username:password`の形式
+    // Basic認証において、Authorizationヘッダーの値は、`username:password`の形式
     let mut credentials = decoded_credentials.splitn(2, ':');
     let username = credentials
         .next()
