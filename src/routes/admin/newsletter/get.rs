@@ -6,7 +6,7 @@ use crate::routes::admin::flash_messages_html;
 use crate::session_state::TypedSession;
 use crate::utils::{e500, see_other};
 
-pub async fn change_password_form(
+pub async fn publish_newsletter_form(
     session: TypedSession,
     flash_messages: IncomingFlashMessages,
 ) -> Result<HttpResponse, actix_web::Error> {
@@ -16,35 +16,37 @@ pub async fn change_password_form(
 
     let msg_html = flash_messages_html(flash_messages);
 
-    Ok(HttpResponse::Ok().content_type(ContentType::html()).body(format!(
-        r#"<!DOCTYPE html>
+    Ok(HttpResponse::Ok()
+        .content_type(ContentType::html())
+        .body(format!(
+            r#"<!DOCTYPE html>
 <html lang="ja">
 <head>
     <meta http-equiv="content-type" content="text/html; charset=utf-8">
-    <title>パスワード変更</title>
+    <title>ニュースレター発行</title>
 </head>
 <body>
     {msg_html}
-    <form action="/admin/password" method="post">
+    <form action="/admin/newsletter" method="post">
         <label>
-            現在のパスワード
-            <input type="password" placeholder="現在のパスワードを入力" name="current_password" >
+            タイトル
+            <input type="input" placeholder="タイトルを入力" name="title" >
         </label>
         <br>
         <label>
-            新しいパスワード
-            <input type="password" placeholder="新しいパスワードを入力" name="new_password" >
+            本文（テキスト）
+            <textarea name="text_content" placeholder="テキストコンテンツを入力" rows="10" cols="50"></textarea>
         </label>
         <br>
         <label>
-            新しいパスワードを確認
-            <input type="password" placeholder="新しいパスワードを再入力" name="new_password_check" >
+            本文（HTML）
+            <textarea name="html_content" placeholder="HTMLコンテンツを入力" rows="10" cols="50"></textarea>
         </label>
         <br>
-        <button type="submit">パスワードを変更</button>
+        <button type="submit">ニュースレターを発行</button>
     </form>
     <p><a href="/admin/dashboard">&lt;- 戻る</a></p>
 </body>
 </html>"#,
-    )))
+        )))
 }
