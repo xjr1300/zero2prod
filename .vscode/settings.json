@@ -3,6 +3,7 @@
     "chrono",
     "hasher",
     "hmac",
+    "idempotency",
     "linkify",
     "requwest",
     "reqwest",
