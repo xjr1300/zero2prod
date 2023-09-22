@@ -1,6 +1,7 @@
 use actix_web::http::header::ContentType;
 use actix_web::HttpResponse;
 use actix_web_flash_messages::IncomingFlashMessages;
+use uuid::Uuid;
 
 use crate::routes::admin::flash_messages_html;
 use crate::session_state::TypedSession;
@@ -15,6 +16,7 @@ pub async fn publish_newsletter_form(
     }
 
     let msg_html = flash_messages_html(flash_messages);
+    let idempotency_key = Uuid::new_v4().to_string();
 
     Ok(HttpResponse::Ok()
         .content_type(ContentType::html())
@@ -43,6 +45,7 @@ pub async fn publish_newsletter_form(
             <textarea name="html_content" placeholder="HTMLコンテンツを入力" rows="10" cols="50"></textarea>
         </label>
         <br>
+        <input hidden type="text" name="idempotency_key" value="{idempotency_key}">
         <button type="submit">ニュースレターを発行</button>
     </form>
     <p><a href="/admin/dashboard">&lt;- 戻る</a></p>
