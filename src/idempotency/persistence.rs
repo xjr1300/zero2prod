@@ -45,3 +45,12 @@ pub async fn get_saved_response(
         Ok(None)
     }
 }
+
+pub async fn save_response(
+    _pool: &PgPool,
+    _idempotency_key: &IdempotencyKey,
+    _user_id: Uuid,
+    _http_response: &HttpResponse,
+) -> Result<(), anyhow::Error> {
+    todo!()
+}
