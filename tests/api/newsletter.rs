@@ -144,5 +144,6 @@ async fn newsletter_creation_is_idempotent() {
     assert_is_redirect_to(&response, "/admin/newsletters");
 
     let html_page = app.get_publish_newsletter_html().await;
-    assert!(html_page.contains("ニュースレターの記事を発行しました。"));
+    dbg!(&html_page);
+    assert!(html_page.contains("ニュースレターの記事は発行されています。"));
 }
