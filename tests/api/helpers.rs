@@ -282,3 +282,5 @@ pub fn assert_is_redirect_to(response: &reqwest::Response, location: &str) {
     assert_eq!(303, response.status().as_u16());
     assert_eq!(location, response.headers().get("Location").unwrap());
 }
+
+pub const POST_SUBSCRIPTION_BODY: &'static str = "name=le%20guin&email=ursula_le_guin%40gmail.com";

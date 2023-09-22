@@ -6,8 +6,8 @@ use sqlx::PgPool;
 use crate::authentication::UserId;
 use crate::domain::SubscriberEmail;
 use crate::email_client::EmailClient;
-use crate::idempotency::{get_saved_response, save_response, IdempotencyKey};
-use crate::utils::{e500, see_other};
+use crate::idempotency::{save_response, try_processing, IdempotencyKey, NextAction};
+use crate::utils::{e400, e500, see_other};
 
 #[derive(serde::Deserialize)]
 pub struct FormData {
@@ -30,15 +30,18 @@ pub async fn publish_newsletter(
         html_content,
         idempotency_key,
     } = form.0;
-    let idempotency_key: IdempotencyKey = idempotency_key.try_into().map_err(e500)?;
-    let subscribers = get_confirmed_subscribers(&pool).await.map_err(e500)?;
-    if let Some(saved_response) = get_saved_response(&pool, &idempotency_key, *user_id)
+    let idempotency_key: IdempotencyKey = idempotency_key.try_into().map_err(e400)?;
+    match try_processing(&pool, &idempotency_key, *user_id)
         .await
         .map_err(e500)?
     {
-        FlashMessage::info("ニュースレターの記事は発行されています。").send();
-        return Ok(saved_response);
+        NextAction::StartProcessing => {}
+        NextAction::ReturnSavedResponse(saved_response) => {
+            success_message().send();
+            return Ok(saved_response);
+        }
     }
+    let subscribers = get_confirmed_subscribers(&pool).await.map_err(e500)?;
     for subscriber in subscribers {
         match subscriber {
             Ok(subscriber) => {
@@ -62,13 +65,17 @@ pub async fn publish_newsletter(
             }
         }
     }
-    FlashMessage::info("ニュースレターの記事を発行しました。").send();
+    success_message().send();
     let response = see_other("/admin/newsletters");
     let response = save_response(&pool, &idempotency_key, *user_id, response)
         .await
         .map_err(e500)?;
 
     Ok(response)
+}
+
+fn success_message() -> FlashMessage {
+    FlashMessage::info("ニュースレターの記事を発行しました。")
 }
 
 struct ConfirmedSubscriber {
