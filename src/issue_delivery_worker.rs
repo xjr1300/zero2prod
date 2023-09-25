@@ -1,12 +1,14 @@
 use std::time::Duration;
 
-use sqlx::{Executor, PgPool, Postgres, Transaction};
+use sqlx::{PgPool, Postgres, Transaction};
 use tracing::field::display;
 use tracing::Span;
 use uuid::Uuid;
 
+use crate::configuration::Settings;
 use crate::domain::SubscriberEmail;
 use crate::email_client::EmailClient;
+use crate::startup::get_connection_pool;
 
 type PgTransaction = Transaction<'static, Postgres>;
 
@@ -144,4 +146,22 @@ async fn worker_loop(pool: PgPool, email_client: EmailClient) -> Result<(), anyh
             }
         }
     }
+}
+
+pub async fn run_worker_until_stopped(configuration: Settings) -> Result<(), anyhow::Error> {
+    let connection_pool = get_connection_pool(&configuration.database);
+
+    let sender_email = configuration
+        .email_client
+        .sender()
+        .expect("Invalid sender email address");
+    let timeout = configuration.email_client.timeout();
+    let email_client = EmailClient::new(
+        configuration.email_client.base_url,
+        sender_email,
+        configuration.email_client.authorization_token,
+        timeout,
+    );
+
+    worker_loop(connection_pool, email_client).await
 }
